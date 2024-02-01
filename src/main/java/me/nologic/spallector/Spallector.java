@@ -27,7 +27,7 @@ public final class Spallector extends JavaPlugin implements Listener {
     private static NamespacedKey expKey;
 
     private HashMap<Entity, CreatureSpawner>    spawners;
-    private HashMap<Inventory, CreatureSpawner> inventories;
+    private HashMap<CreatureSpawner, JsonInventory> inventories;
 
     @Getter
     private static Spallector instance;
@@ -54,9 +54,23 @@ public final class Spallector extends JavaPlugin implements Listener {
     private void onEntityDeath(final EntityDeathEvent event) {
         if (event.getEntity().fromMobSpawner()) {
             final CreatureSpawner spawner = this.spawners.get(event.getEntity());
-            spawner.getPersistentDataContainer().set(itemsKey, PersistentDataType.STRING, new JsonInventory(spawner).add(event.getDrops()).toString());
+
+            // LAZY
+            final JsonInventory jsonInventory;
+            if (inventories.get(spawner) != null) {
+                jsonInventory = inventories.get(spawner);
+            } else {
+                jsonInventory = new JsonInventory(spawner);
+                inventories.put(spawner, jsonInventory);
+            }
+
+            spawner.getPersistentDataContainer().set(itemsKey, PersistentDataType.STRING, jsonInventory.add(event.getDrops()).toString());
             spawner.getPersistentDataContainer().set(expKey, PersistentDataType.INTEGER, spawner.getPersistentDataContainer().getOrDefault(expKey, PersistentDataType.INTEGER, 0) + ((int) (Math.random() * this.getConfig().getInt("xp-drop"))));
             spawner.update();
+
+            // UPDATE
+            jsonInventory.getInventory().getViewers().forEach(viewer -> viewer.openInventory(jsonInventory.getInventory()));
+
             event.setCancelled(true);
             event.getEntity().remove();
         }
@@ -68,6 +82,7 @@ public final class Spallector extends JavaPlugin implements Listener {
 
             final CreatureSpawner spawner = ((CreatureSpawner) event.getClickedBlock().getState());
 
+            // EXP
             if (event.getPlayer().isSneaking()) {
                 final int exp = spawner.getPersistentDataContainer().getOrDefault(expKey, PersistentDataType.INTEGER, 0);
                 spawner.getPersistentDataContainer().set(expKey, PersistentDataType.INTEGER, 0);
@@ -76,24 +91,37 @@ public final class Spallector extends JavaPlugin implements Listener {
                 return;
             }
 
-            final Inventory inventory = new JsonInventory(spawner).getInventory();
-            this.inventories.put(inventory, spawner);
-            event.getPlayer().openInventory((inventory));
+            // LAZY
+            final JsonInventory jsonInventory;
+            if (inventories.get(spawner) != null) {
+                jsonInventory = inventories.get(spawner);
+            } else {
+                jsonInventory = new JsonInventory(spawner);
+                inventories.put(spawner, jsonInventory);
+            }
+
+            event.getPlayer().openInventory((jsonInventory.getInventory()));
         }
     }
 
     @EventHandler
     private void onInventoryClose(final InventoryCloseEvent event) {
 
-        final Inventory inventory = event.getInventory();
+        final Inventory     inventory     = event.getInventory();
+        final JsonInventory jsonInventory = inventories.values().stream().filter(ji -> ji.getInventory().equals(inventory)).findAny().orElse(null);
 
-        if (inventories.containsKey(inventory)) {
-            final CreatureSpawner spawner = inventories.get(inventory);
-            final JsonInventory jsonInventory = new JsonInventory(inventory);
-            spawner.getPersistentDataContainer().set(itemsKey, PersistentDataType.STRING, jsonInventory.toString());
-            spawner.update();
-            inventories.remove(inventory);
-        }
+        if (jsonInventory == null)
+            return;
+
+        jsonInventory.setInventory(inventory);
+
+        final CreatureSpawner spawner = jsonInventory.getSpawner();
+        spawner.getPersistentDataContainer().set(itemsKey, PersistentDataType.STRING, jsonInventory.toString());
+
+        // UPDATE
+        jsonInventory.getInventory().getViewers().forEach(viewer -> {
+            if (!viewer.equals(event.getPlayer())) viewer.openInventory(jsonInventory.getInventory());
+        });
     }
 
 }

@@ -5,6 +5,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.SneakyThrows;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
@@ -24,11 +25,15 @@ import java.util.Objects;
 @Getter
 public class JsonInventory {
 
-    private final Inventory inventory;
+    private final CreatureSpawner spawner;
+
+    @Setter
+    private Inventory inventory;
 
     public JsonInventory(final CreatureSpawner spawner) {
 
         final String data = spawner.getPersistentDataContainer().get(Spallector.getItemsKey(), PersistentDataType.STRING);
+        this.spawner = spawner;
 
         if (data != null) {
             this.inventory = this.parseInventory(data);
@@ -36,8 +41,9 @@ public class JsonInventory {
 
     }
 
-    public JsonInventory(final Inventory inventory) {
+    public JsonInventory(final CreatureSpawner spawner, final Inventory inventory) {
         this.inventory = inventory;
+        this.spawner = spawner;
     }
 
     public JsonInventory add(final List<ItemStack> items) {
