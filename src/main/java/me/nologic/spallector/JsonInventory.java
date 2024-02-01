@@ -32,7 +32,7 @@ public class JsonInventory {
 
         if (data != null) {
             this.inventory = this.parseInventory(data);
-        } else this.inventory = Bukkit.createInventory(null, 9 * Spallector.getInstance().getConfig().getInt("inventory.rows"), Component.text(Objects.requireNonNull(Spallector.getInstance().getConfig().getString("inventory.title"))));
+        } else this.inventory = Bukkit.createInventory(null, 9 * Spallector.getInstance().getConfig().getInt("inventory.rows") * 9, Component.text(Objects.requireNonNull(Spallector.getInstance().getConfig().getString("inventory.title"))));
 
     }
 
@@ -73,7 +73,7 @@ public class JsonInventory {
 
     private Inventory parseInventory(final String inventoryJson) {
         JsonObject obj = JsonParser.parseString(inventoryJson).getAsJsonObject();
-        Inventory inv = Bukkit.createInventory(null, Spallector.getInstance().getConfig().getInt("inventory.rows"), Component.text(Objects.requireNonNull(Spallector.getInstance().getConfig().getString("inventory.title"))));
+        Inventory inv = Bukkit.createInventory(null, Spallector.getInstance().getConfig().getInt("inventory.rows") * 9, Component.text(Objects.requireNonNull(Spallector.getInstance().getConfig().getString("inventory.title"))));
         JsonArray items = obj.get("items").getAsJsonArray();
         for (final JsonElement element : items) {
             JsonObject jsonItem = element.getAsJsonObject();

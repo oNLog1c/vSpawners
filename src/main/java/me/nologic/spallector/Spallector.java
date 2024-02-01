@@ -55,7 +55,7 @@ public final class Spallector extends JavaPlugin implements Listener {
         if (event.getEntity().fromMobSpawner()) {
             final CreatureSpawner spawner = this.spawners.get(event.getEntity());
             spawner.getPersistentDataContainer().set(itemsKey, PersistentDataType.STRING, new JsonInventory(spawner).add(event.getDrops()).toString());
-            spawner.getPersistentDataContainer().set(expKey, PersistentDataType.INTEGER, event.getDroppedExp() + spawner.getPersistentDataContainer().getOrDefault(expKey, PersistentDataType.INTEGER, 0));
+            spawner.getPersistentDataContainer().set(expKey, PersistentDataType.INTEGER, spawner.getPersistentDataContainer().getOrDefault(expKey, PersistentDataType.INTEGER, 0) + ((int) (Math.random() * this.getConfig().getInt("xp-drop"))));
             spawner.update();
             event.setCancelled(true);
             event.getEntity().remove();
@@ -66,13 +66,18 @@ public final class Spallector extends JavaPlugin implements Listener {
     private void onPlayerInteract(final PlayerInteractEvent event) {
         if (event.getAction().isRightClick() && event.getClickedBlock() != null && event.getClickedBlock().getType().equals(Material.SPAWNER)) {
 
+            final CreatureSpawner spawner = ((CreatureSpawner) event.getClickedBlock().getState());
+
             if (event.getPlayer().isSneaking()) {
-                event.getPlayer().giveExp(((CreatureSpawner) event.getClickedBlock().getState()).getPersistentDataContainer().getOrDefault(expKey, PersistentDataType.INTEGER, 0));
+                final int exp = spawner.getPersistentDataContainer().getOrDefault(expKey, PersistentDataType.INTEGER, 0);
+                spawner.getPersistentDataContainer().set(expKey, PersistentDataType.INTEGER, 0);
+                event.getPlayer().giveExp(exp);
+                spawner.update();
                 return;
             }
 
-            final Inventory inventory = new JsonInventory((CreatureSpawner) event.getClickedBlock().getState()).getInventory();
-            this.inventories.put(inventory, (CreatureSpawner) event.getClickedBlock().getState());
+            final Inventory inventory = new JsonInventory(spawner).getInventory();
+            this.inventories.put(inventory, spawner);
             event.getPlayer().openInventory((inventory));
         }
     }

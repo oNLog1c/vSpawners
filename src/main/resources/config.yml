@@ -2,3 +2,6 @@ inventory:
 
   rows: 3
   title: "Spawner"
+
+# Spawners accumulates levels, the player can click hold shift and right-click on the spawner to pick up all the exp.
+xp-drop: 5
