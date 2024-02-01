@@ -28,7 +28,7 @@ public class JsonInventory {
 
     public JsonInventory(final CreatureSpawner spawner) {
 
-        final String data = spawner.getPersistentDataContainer().get(Spallector.getNamespacedKey(), PersistentDataType.STRING);
+        final String data = spawner.getPersistentDataContainer().get(Spallector.getItemsKey(), PersistentDataType.STRING);
 
         if (data != null) {
             this.inventory = this.parseInventory(data);

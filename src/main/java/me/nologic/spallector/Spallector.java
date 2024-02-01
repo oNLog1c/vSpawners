@@ -21,7 +21,11 @@ import java.util.HashMap;
 public final class Spallector extends JavaPlugin implements Listener {
 
     @Getter
-    private static NamespacedKey namespacedKey;
+    private static NamespacedKey itemsKey;
+
+    @Getter
+    private static NamespacedKey expKey;
+
     private HashMap<Entity, CreatureSpawner>    spawners;
     private HashMap<Inventory, CreatureSpawner> inventories;
 
@@ -32,7 +36,8 @@ public final class Spallector extends JavaPlugin implements Listener {
     public void onEnable() {
         instance = this;
         this.saveDefaultConfig();
-        namespacedKey = new NamespacedKey(this, "spallector");
+        itemsKey = new NamespacedKey(this, "items");
+        expKey   = new NamespacedKey(this, "exp");
         spawners = new HashMap<>();
         inventories = new HashMap<>();
         super.getServer().getPluginManager().registerEvents(this, this);
@@ -48,8 +53,10 @@ public final class Spallector extends JavaPlugin implements Listener {
     @EventHandler
     private void onEntityDeath(final EntityDeathEvent event) {
         if (event.getEntity().fromMobSpawner()) {
-            this.spawners.get(event.getEntity()).getPersistentDataContainer().set(namespacedKey, PersistentDataType.STRING, new JsonInventory(spawners.get(event.getEntity())).add(event.getDrops()).toString());
-            this.spawners.get(event.getEntity()).update();
+            final CreatureSpawner spawner = this.spawners.get(event.getEntity());
+            spawner.getPersistentDataContainer().set(itemsKey, PersistentDataType.STRING, new JsonInventory(spawner).add(event.getDrops()).toString());
+            spawner.getPersistentDataContainer().set(expKey, PersistentDataType.INTEGER, event.getDroppedExp() + spawner.getPersistentDataContainer().getOrDefault(expKey, PersistentDataType.INTEGER, 0));
+            spawner.update();
             event.setCancelled(true);
             event.getEntity().remove();
         }
@@ -59,8 +66,10 @@ public final class Spallector extends JavaPlugin implements Listener {
     private void onPlayerInteract(final PlayerInteractEvent event) {
         if (event.getAction().isRightClick() && event.getClickedBlock() != null && event.getClickedBlock().getType().equals(Material.SPAWNER)) {
 
-            if (event.getPlayer().isSneaking())
+            if (event.getPlayer().isSneaking()) {
+                event.getPlayer().giveExp(((CreatureSpawner) event.getClickedBlock().getState()).getPersistentDataContainer().getOrDefault(expKey, PersistentDataType.INTEGER, 0));
                 return;
+            }
 
             final Inventory inventory = new JsonInventory((CreatureSpawner) event.getClickedBlock().getState()).getInventory();
             this.inventories.put(inventory, (CreatureSpawner) event.getClickedBlock().getState());
@@ -76,7 +85,7 @@ public final class Spallector extends JavaPlugin implements Listener {
         if (inventories.containsKey(inventory)) {
             final CreatureSpawner spawner = inventories.get(inventory);
             final JsonInventory jsonInventory = new JsonInventory(inventory);
-            spawner.getPersistentDataContainer().set(namespacedKey, PersistentDataType.STRING, jsonInventory.toString());
+            spawner.getPersistentDataContainer().set(itemsKey, PersistentDataType.STRING, jsonInventory.toString());
             spawner.update();
             inventories.remove(inventory);
         }
