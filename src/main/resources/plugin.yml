@@ -1,0 +1,4 @@
+name: Spallector
+version: '${project.version}'
+main: me.nologic.spallector.Spallector
+api-version: '1.20'
