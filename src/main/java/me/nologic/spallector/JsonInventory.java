@@ -5,7 +5,6 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import lombok.Getter;
-import lombok.Setter;
 import lombok.SneakyThrows;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
@@ -27,8 +26,7 @@ public class JsonInventory {
 
     private final CreatureSpawner spawner;
 
-    @Setter
-    private Inventory inventory;
+    private final Inventory inventory;
 
     public JsonInventory(final CreatureSpawner spawner) {
 
@@ -39,11 +37,6 @@ public class JsonInventory {
             this.inventory = this.parseInventory(data);
         } else this.inventory = Bukkit.createInventory(null, 9 * Spallector.getInstance().getConfig().getInt("inventory.rows") * 9, Component.text(Objects.requireNonNull(Spallector.getInstance().getConfig().getString("inventory.title"))));
 
-    }
-
-    public JsonInventory(final CreatureSpawner spawner, final Inventory inventory) {
-        this.inventory = inventory;
-        this.spawner = spawner;
     }
 
     public JsonInventory add(final List<ItemStack> items) {

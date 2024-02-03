@@ -26,7 +26,7 @@ public final class Spallector extends JavaPlugin implements Listener {
     @Getter
     private static NamespacedKey expKey;
 
-    private HashMap<Entity, CreatureSpawner>    spawners;
+    private HashMap<Entity, CreatureSpawner>        spawners;
     private HashMap<CreatureSpawner, JsonInventory> inventories;
 
     @Getter
@@ -53,6 +53,7 @@ public final class Spallector extends JavaPlugin implements Listener {
     @EventHandler
     private void onEntityDeath(final EntityDeathEvent event) {
         if (event.getEntity().fromMobSpawner()) {
+
             final CreatureSpawner spawner = this.spawners.get(event.getEntity());
 
             // LAZY
@@ -67,9 +68,6 @@ public final class Spallector extends JavaPlugin implements Listener {
             spawner.getPersistentDataContainer().set(itemsKey, PersistentDataType.STRING, jsonInventory.add(event.getDrops()).toString());
             spawner.getPersistentDataContainer().set(expKey, PersistentDataType.INTEGER, spawner.getPersistentDataContainer().getOrDefault(expKey, PersistentDataType.INTEGER, 0) + ((int) (Math.random() * this.getConfig().getInt("xp-drop"))));
             spawner.update();
-
-            // UPDATE
-            jsonInventory.getInventory().getViewers().forEach(viewer -> viewer.openInventory(jsonInventory.getInventory()));
 
             event.setCancelled(true);
             event.getEntity().remove();
@@ -113,15 +111,10 @@ public final class Spallector extends JavaPlugin implements Listener {
         if (jsonInventory == null)
             return;
 
-        jsonInventory.setInventory(inventory);
-
         final CreatureSpawner spawner = jsonInventory.getSpawner();
         spawner.getPersistentDataContainer().set(itemsKey, PersistentDataType.STRING, jsonInventory.toString());
 
-        // UPDATE
-        jsonInventory.getInventory().getViewers().forEach(viewer -> {
-            if (!viewer.equals(event.getPlayer())) viewer.openInventory(jsonInventory.getInventory());
-        });
+        // spawner.update() вызывает провоцирует тик спавна мобов, что добавляет потенциальный абуз, ломающий баланс
     }
 
 }
