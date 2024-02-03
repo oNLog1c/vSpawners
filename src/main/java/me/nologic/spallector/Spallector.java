@@ -3,6 +3,7 @@ package me.nologic.spallector;
 import lombok.Getter;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
+import org.bukkit.block.BlockState;
 import org.bukkit.block.CreatureSpawner;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
@@ -41,6 +42,11 @@ public final class Spallector extends JavaPlugin implements Listener {
         spawners = new HashMap<>();
         inventories = new HashMap<>();
         super.getServer().getPluginManager().registerEvents(this, this);
+    }
+
+    @Override
+    public void onDisable() {
+        this.inventories.keySet().forEach(BlockState::update);
     }
 
     @EventHandler
