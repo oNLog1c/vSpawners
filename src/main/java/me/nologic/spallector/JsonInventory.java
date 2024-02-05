@@ -35,7 +35,7 @@ public class JsonInventory {
 
         if (data != null) {
             this.inventory = this.parseInventory(data);
-        } else this.inventory = Bukkit.createInventory(null, 9 * Spallector.getInstance().getConfig().getInt("inventory.rows") * 9, Component.text(Objects.requireNonNull(Spallector.getInstance().getConfig().getString("inventory.title"))));
+        } else this.inventory = Bukkit.createInventory(null, Spallector.getInstance().getConfig().getInt("inventory.rows") * 9, Component.text(Objects.requireNonNull(Spallector.getInstance().getConfig().getString("inventory.title"))));
 
     }
 
