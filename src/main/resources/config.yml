@@ -1,7 +1,23 @@
 inventory:
 
-  rows: 3
-  title: "Spawner"
+  rows: 6
+  title: "Spawner (%s)"
+
+  buttons:
+
+    inspect-drop-button:
+      material-type: "ROTTEN_FLESH"
+      title:         "§b§lItems"
+      lore:        [ "§7Click §lLMB §7to view the contents of the spawner.", "§7Click §lRMB §7to instantly collect all the contents." ]
+
+    exp-button:
+      material-type: "EXPERIENCE_BOTTLE"
+      title:         "§e§lExperience"
+      lore:        [ "§7Experience accumulated: §e${exp}", "", "§7Click §lLMB §7to collect all the accumulated experience." ]
 
 # Spawners accumulates levels, the player can click hold shift and right-click on the spawner to pick up all the exp.
 xp-drop: 5
+
+message:
+
+  not-enough-space: "§c[!] §7There is not enough space in your inventory; some items are left in the spawner!"
