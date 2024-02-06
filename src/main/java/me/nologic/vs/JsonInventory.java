@@ -1,4 +1,4 @@
-package me.nologic.spallector;
+package me.nologic.vs;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -8,12 +8,15 @@ import lombok.Getter;
 import lombok.SneakyThrows;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
+import org.bukkit.Material;
 import org.bukkit.block.CreatureSpawner;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.util.io.BukkitObjectInputStream;
 import org.bukkit.util.io.BukkitObjectOutputStream;
+import org.ipvp.canvas.slot.ClickOptions;
+import org.ipvp.canvas.type.ChestMenu;
 import org.yaml.snakeyaml.external.biz.base64Coder.Base64Coder;
 
 import java.io.ByteArrayInputStream;
@@ -26,17 +29,29 @@ public class JsonInventory {
 
     private final CreatureSpawner spawner;
 
+    private final ChestMenu chestMenu;
     private final Inventory inventory;
 
     public JsonInventory(final CreatureSpawner spawner) {
 
-        final String data = spawner.getPersistentDataContainer().get(Spallector.getItemsKey(), PersistentDataType.STRING);
+        final String data = spawner.getPersistentDataContainer().get(vSpawners.getItemsKey(), PersistentDataType.STRING);
         this.spawner = spawner;
+
+        this.chestMenu = this.buildChestGUI();
 
         if (data != null) {
             this.inventory = this.parseInventory(data);
-        } else this.inventory = Bukkit.createInventory(null, Spallector.getInstance().getConfig().getInt("inventory.rows") * 9, Component.text(Objects.requireNonNull(Spallector.getInstance().getConfig().getString("inventory.title"))));
+        } else this.inventory = Bukkit.createInventory(null, vSpawners.getInstance().getConfig().getInt("inventory.rows") * 9, Component.text(Objects.requireNonNull(vSpawners.getInstance().getConfig().getString("inventory.title"))));
 
+    }
+
+    private ChestMenu buildChestGUI() {
+        final ChestMenu menu = ChestMenu.builder(1).title(spawner.getSpawnedType() + " " + vSpawners.getInstance().getConfig().getString("inventory.title")).build();;
+        menu.forEach(slot -> slot.setClickOptions(ClickOptions.DENY_ALL));
+        menu.getSlot(11).setItem(new ItemStack(Material.ROTTEN_FLESH));
+        menu.getSlot(11).setClickHandler((player, info) -> player.openInventory(inventory));
+        menu.getSlot(15).setItem(new ItemStack(Material.EXPERIENCE_BOTTLE));
+        return  menu;
     }
 
     public JsonInventory add(final List<ItemStack> items) {
@@ -72,7 +87,7 @@ public class JsonInventory {
 
     private Inventory parseInventory(final String inventoryJson) {
         JsonObject obj = JsonParser.parseString(inventoryJson).getAsJsonObject();
-        Inventory inv = Bukkit.createInventory(null, Spallector.getInstance().getConfig().getInt("inventory.rows") * 9, Component.text(Objects.requireNonNull(Spallector.getInstance().getConfig().getString("inventory.title"))));
+        Inventory inv = Bukkit.createInventory(null, vSpawners.getInstance().getConfig().getInt("inventory.rows") * 9, Component.text(Objects.requireNonNull(vSpawners.getInstance().getConfig().getString("inventory.title"))));
         JsonArray items = obj.get("items").getAsJsonArray();
         for (final JsonElement element : items) {
             JsonObject jsonItem = element.getAsJsonObject();

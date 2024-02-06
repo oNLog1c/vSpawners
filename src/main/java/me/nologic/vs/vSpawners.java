@@ -1,4 +1,4 @@
-package me.nologic.spallector;
+package me.nologic.vs;
 
 import lombok.Getter;
 import org.bukkit.Material;
@@ -19,7 +19,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.HashMap;
 
-public final class Spallector extends JavaPlugin implements Listener {
+public final class vSpawners extends JavaPlugin implements Listener {
 
     @Getter
     private static NamespacedKey itemsKey;
@@ -31,7 +31,7 @@ public final class Spallector extends JavaPlugin implements Listener {
     private HashMap<CreatureSpawner, JsonInventory> inventories;
 
     @Getter
-    private static Spallector instance;
+    private static vSpawners instance;
 
     @Override
     public void onEnable() {

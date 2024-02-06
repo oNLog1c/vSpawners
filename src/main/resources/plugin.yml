@@ -1,4 +1,4 @@
-name: Spallector
+name: vSpawners
 version: '${project.version}'
-main: me.nologic.spallector.Spallector
+main: me.nologic.vs.vSpawners
 api-version: '1.20'
