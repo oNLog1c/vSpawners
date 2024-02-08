@@ -28,34 +28,40 @@ import java.io.ByteArrayOutputStream;
 import java.util.*;
 
 @Getter
-public class SpawnerAccumulator {
+public final class SpawnerAccumulator {
 
+    private final SpawnerManager  manager;
     private final CreatureSpawner spawner;
 
-    private final ChestMenu chestMenu;
+    private final ChestMenu menu;
     private final Inventory inventory;
+
+    private final String title;
+    private final int    inventorySize;
 
     private int accumulatedExperience;
 
-    public SpawnerAccumulator(final CreatureSpawner spawner) {
+    public SpawnerAccumulator(final SpawnerManager spawnerManager, final CreatureSpawner spawner) {
 
-        final String data = spawner.getPersistentDataContainer().get(vSpawners.getItemsKey(), PersistentDataType.STRING);
-        this.spawner = spawner;
-        this.accumulatedExperience = spawner.getPersistentDataContainer().getOrDefault(vSpawners.getExpKey(), PersistentDataType.INTEGER, 0);
+        this.manager = spawnerManager;
 
-        this.chestMenu = ChestMenu.builder(1).title(String.format(Objects.requireNonNull(vSpawners.getInstance().getConfig().getString("inventory.title")), spawner.getSpawnedType())).build();
+        final String data   = spawner.getPersistentDataContainer().get(manager.getItemsKey(), PersistentDataType.STRING);
+        this.spawner        = spawner;
+        this.title = Objects.requireNonNull(vSpawners.getInstance().getConfig().getString("inventory.title"));
+        this.inventorySize = vSpawners.getInstance().getConfig().getInt("inventory.rows") * 9;
+        this.menu = ChestMenu.builder(1).title(String.format(title, spawner.getSpawnedType())).build();
+        this.accumulatedExperience = spawner.getPersistentDataContainer().getOrDefault(manager.getExperienceKey(), PersistentDataType.INTEGER, 0);
 
         if (data != null) {
             this.inventory = this.parseInventory(data);
-        } else this.inventory = Bukkit.createInventory(null, vSpawners.getInstance().getConfig().getInt("inventory.rows") * 9, Component.text(String.format(Objects.requireNonNull(vSpawners.getInstance().getConfig().getString("inventory.title")), spawner.getSpawnedType())));
-
+        } else this.inventory = Bukkit.createInventory(null, inventorySize, Component.text(String.format(title, spawner.getSpawnedType())));
     }
 
     public void openChestMenu(final Player viewer) {
 
         // Item button
-        chestMenu.getSlot(2).setItem(Button.DROP_BUTTON.update(this));
-        chestMenu.getSlot(2).setClickHandler((player, info) -> {
+        menu.getSlot(2).setItem(Button.DROP_BUTTON.update(this));
+        menu.getSlot(2).setClickHandler((player, info) -> {
             player.playSound(player, Sound.UI_BUTTON_CLICK, 1F, 2F);
 
             if (info.getClickType().isLeftClick()) {
@@ -78,29 +84,34 @@ public class SpawnerAccumulator {
         });
 
         // Experience button
-        chestMenu.getSlot(6).setItem(Button.EXP_BUTTON.update(this));
-        chestMenu.getSlot(6).setClickHandler((player, info) -> {
+        menu.getSlot(6).setItem(Button.EXP_BUTTON.update(this));
+        menu.getSlot(6).setClickHandler((player, info) -> {
             player.playSound(player, Sound.UI_BUTTON_CLICK, 1F, 2F);
 
             if (accumulatedExperience == 0)
                 return;
 
-            spawner.getPersistentDataContainer().set(vSpawners.getExpKey(), PersistentDataType.INTEGER, 0);
             player.giveExp(accumulatedExperience);
-            accumulatedExperience = 0;
-
+            this.setAccumulatedExperience(0);
             player.playSound(player, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1F, 1F);
-            chestMenu.getSlot(6).setItem(Button.EXP_BUTTON.update(this));
-            chestMenu.update();
+            menu.update();
         });
-        chestMenu.update();
-        chestMenu.open(viewer);
+
+        menu.update();
+        menu.open(viewer);
     }
 
     public void setAccumulatedExperience(final int exp) {
         this.accumulatedExperience = exp;
-        spawner.getPersistentDataContainer().set(vSpawners.getExpKey(), PersistentDataType.INTEGER, accumulatedExperience);
-        chestMenu.getSlot(6).setItem(Button.EXP_BUTTON.update(this));
+        spawner.getPersistentDataContainer().set(manager.getExperienceKey(), PersistentDataType.INTEGER, accumulatedExperience);
+        menu.getSlot(6).setItem(Button.EXP_BUTTON.update(this));
+    }
+
+    public SpawnerAccumulator addItems(final List<ItemStack> items) {
+        for (ItemStack item : items) {
+            this.inventory.addItem(item);
+        }
+        return this;
     }
 
     private enum Button {
@@ -142,15 +153,9 @@ public class SpawnerAccumulator {
 
     }
 
-    public SpawnerAccumulator add(final List<ItemStack> items) {
-        for (ItemStack item : items) {
-            this.inventory.addItem(item);
-        }
-        return this;
-    }
+    /* --- JSON --- */
 
-    @Override
-    public String toString() {
+    public String serializeInventory() {
 
         JsonObject obj = new JsonObject();
 
@@ -175,7 +180,7 @@ public class SpawnerAccumulator {
 
     private Inventory parseInventory(final String inventoryJson) {
         JsonObject obj = JsonParser.parseString(inventoryJson).getAsJsonObject();
-        Inventory inv = Bukkit.createInventory(null, vSpawners.getInstance().getConfig().getInt("inventory.rows") * 9, Component.text(String.format(Objects.requireNonNull(vSpawners.getInstance().getConfig().getString("inventory.title")), spawner.getSpawnedType())));
+        Inventory inv = Bukkit.createInventory(null, inventorySize, Component.text(String.format(title, spawner.getSpawnedType())));
         JsonArray items = obj.get("items").getAsJsonArray();
         for (final JsonElement element : items) {
             JsonObject jsonItem = element.getAsJsonObject();
@@ -186,7 +191,7 @@ public class SpawnerAccumulator {
     }
 
     @SneakyThrows
-    protected final String serializeItemStack(final ItemStack item) {
+    private String serializeItemStack(final ItemStack item) {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         BukkitObjectOutputStream dataOutput = new BukkitObjectOutputStream(outputStream);
         dataOutput.writeObject(item);
