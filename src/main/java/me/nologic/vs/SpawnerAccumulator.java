@@ -47,8 +47,8 @@ public final class SpawnerAccumulator {
 
         final String data   = spawner.getPersistentDataContainer().get(manager.getItemsKey(), PersistentDataType.STRING);
         this.spawner        = spawner;
-        this.title = Objects.requireNonNull(vSpawners.getInstance().getConfig().getString("inventory.title"));
-        this.inventorySize = vSpawners.getInstance().getConfig().getInt("inventory.rows") * 9;
+        this.title          = Objects.requireNonNull(vSpawners.getInstance().getConfig().getString("inventory.title"));
+        this.inventorySize  = vSpawners.getInstance().getConfig().getInt("inventory.rows") * 9;
         this.menu = ChestMenu.builder(1).title(String.format(title, spawner.getSpawnedType())).build();
         this.accumulatedExperience = spawner.getPersistentDataContainer().getOrDefault(manager.getExperienceKey(), PersistentDataType.INTEGER, 0);
 
