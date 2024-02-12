@@ -1,3 +1,9 @@
 spawner-drops:
 
   dice: 100
+
+  # Completely overwrite drops if true, or add items to the standard loot if false.
+  overwrite: false
+
+  ZOMBIE:
+    0-1: []

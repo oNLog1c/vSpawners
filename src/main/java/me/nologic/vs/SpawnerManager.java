@@ -5,6 +5,7 @@ import lombok.Getter;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.block.CreatureSpawner;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.ExperienceOrb;
@@ -24,9 +25,7 @@ import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
 public class SpawnerManager implements Listener {
 
@@ -43,8 +42,11 @@ public class SpawnerManager implements Listener {
 
     private final HashMap<Entity, CreatureSpawner> entitiesFromSpawners;
 
+    private final Random random;
+
     public SpawnerManager(final vSpawners plugin) {
         this.plugin = plugin;
+        this.random   = new Random();
         itemsKey      = new NamespacedKey(plugin, "items");
         experienceKey = new NamespacedKey(plugin, "exp");
         workingSpawners      = new HashMap<>();
@@ -110,9 +112,34 @@ public class SpawnerManager implements Listener {
     private void onEntityDeath(final EntityDeathEvent event) {
         if (event.getEntity().fromMobSpawner()) {
 
-            final CreatureSpawner    spawner     = this.entitiesFromSpawners.get(event.getEntity());
-            final SpawnerAccumulator accumulator = getSpawnerAccumulator(spawner);
 
+            final CreatureSpawner    spawner     = this.entitiesFromSpawners.get(event.getEntity());
+            final SpawnerAccumulator accumulator = this.getSpawnerAccumulator(spawner);
+
+            /* Drop modification. */
+            final ConfigurationSection section = plugin.getLootConfig().getConfigurationSection("spawner-drops.%s".formatted(event.getEntity().getType().toString()));
+            final int                  dice    = random.nextInt(plugin.getLootConfig().getInt("spawner-drops.dice"));
+
+            if (plugin.getLootConfig().getBoolean("spawner-drops.overwrite")) {
+                event.getDrops().clear();
+            }
+
+            if (section != null) {
+                for (final String key : section.getKeys(false)) {
+                    final int[] range = { Integer.parseInt(key.split("-")[0]), Integer.parseInt(key.split("-")[1]) };
+                    if (dice >= range[0] && dice <= range[1]) {
+
+                        final ItemStack item = accumulator.deserializeItemStack(plugin.getLootConfig().getString("spawner-drops.%s.%s".formatted(event.getEntityType().toString(), key)));
+
+                        if (item != null) {
+                            event.getDrops().add(item);
+                            plugin.getLogger().info("item:" + item);
+                        }
+                    }
+                }
+            }
+
+            /* Experience and persistent data. */
             int exp = ((int) (Math.random() * plugin.getConfig().getInt("xp-drop")));
             spawner.getPersistentDataContainer().set(itemsKey, PersistentDataType.STRING, accumulator.addItems(event.getDrops()).serializeInventory());
             spawner.update();

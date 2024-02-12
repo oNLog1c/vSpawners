@@ -191,7 +191,7 @@ public final class SpawnerAccumulator {
     }
 
     @SneakyThrows
-    private String serializeItemStack(final ItemStack item) {
+    public String serializeItemStack(final ItemStack item) {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         BukkitObjectOutputStream dataOutput = new BukkitObjectOutputStream(outputStream);
         dataOutput.writeObject(item);
@@ -200,7 +200,7 @@ public final class SpawnerAccumulator {
     }
 
     @SneakyThrows
-    private ItemStack deserializeItemStack(final String base64) {
+    public ItemStack deserializeItemStack(final String base64) {
         ByteArrayInputStream inputStream = new ByteArrayInputStream(Base64Coder.decodeLines(base64));
         BukkitObjectInputStream dataInput = new BukkitObjectInputStream(inputStream);
         ItemStack item = (ItemStack) dataInput.readObject();

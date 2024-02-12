@@ -2,6 +2,7 @@ package me.nologic.vs;
 
 import lombok.Getter;
 import co.aikar.commands.PaperCommandManager;
+import lombok.Setter;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.ipvp.canvas.MenuFunctionListener;
@@ -13,8 +14,10 @@ public final class vSpawners extends JavaPlugin {
     @Getter
     private PaperCommandManager commandManager;
 
-    @Getter
+    @Getter @Setter
     private YamlConfiguration lootConfig;
+
+    private SpawnerManager spawnerManager;
 
     @Override
     public void onEnable() {
@@ -22,6 +25,7 @@ public final class vSpawners extends JavaPlugin {
         this.manageConfigs();
         this.commandManager = new PaperCommandManager(this);
         this.commandManager.registerCommand(new SpawnerCommand());
+        this.spawnerManager = new SpawnerManager(this);
         super.getServer().getPluginManager().registerEvents(new MenuFunctionListener(), this);
     }
 
@@ -33,8 +37,9 @@ public final class vSpawners extends JavaPlugin {
         final File lootConfigFile = new File(super.getDataFolder(), "loot.yml");
         if (!lootConfigFile.exists()) {
             super.saveResource("loot.yml", false);
-            this.lootConfig = YamlConfiguration.loadConfiguration(lootConfigFile);
         }
+
+        this.lootConfig = YamlConfiguration.loadConfiguration(lootConfigFile);
     }
 
     @Getter
