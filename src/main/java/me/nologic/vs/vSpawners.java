@@ -17,15 +17,13 @@ public final class vSpawners extends JavaPlugin {
     @Getter @Setter
     private YamlConfiguration lootConfig;
 
-    private SpawnerManager spawnerManager;
-
     @Override
     public void onEnable() {
         instance = this;
         this.manageConfigs();
         this.commandManager = new PaperCommandManager(this);
         this.commandManager.registerCommand(new SpawnerCommand());
-        this.spawnerManager = new SpawnerManager(this);
+        SpawnerManager spawnerManager = new SpawnerManager(this);
         super.getServer().getPluginManager().registerEvents(new MenuFunctionListener(), this);
     }
 

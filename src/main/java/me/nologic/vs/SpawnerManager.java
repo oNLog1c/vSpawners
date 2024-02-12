@@ -8,11 +8,13 @@ import org.bukkit.block.CreatureSpawner;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.ExperienceOrb;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.SpawnerSpawnEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
@@ -21,6 +23,7 @@ import org.bukkit.event.world.ChunkUnloadEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BlockStateMeta;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -38,6 +41,9 @@ public class SpawnerManager implements Listener {
     private final NamespacedKey experienceKey;
 
     @Getter
+    private final NamespacedKey entityTypeKey;
+
+    @Getter
     private final HashMap<CreatureSpawner, SpawnerAccumulator> workingSpawners;
 
     private final HashMap<Entity, CreatureSpawner> entitiesFromSpawners;
@@ -49,6 +55,7 @@ public class SpawnerManager implements Listener {
         this.random   = new Random();
         itemsKey      = new NamespacedKey(plugin, "items");
         experienceKey = new NamespacedKey(plugin, "exp");
+        entityTypeKey = new NamespacedKey(plugin, "type");
         workingSpawners      = new HashMap<>();
         entitiesFromSpawners = new HashMap<>();
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
@@ -88,8 +95,15 @@ public class SpawnerManager implements Listener {
         if (event.getBlock().getType().equals(Material.SPAWNER)) {
 
             final CreatureSpawner spawner = (CreatureSpawner) event.getBlock().getState();
+
+            /* Drop a spawner if it's broken by a silk touch tool. */
             if (event.getPlayer().getInventory().getItemInMainHand().getEnchantments().containsKey(Enchantment.SILK_TOUCH)) {
-                final ItemStack dropped = spawner.getWorld().dropItem(spawner.getLocation().add(0.5, 0.5, 0.5), new ItemStack(Material.SPAWNER)).getItemStack();
+
+                if (spawner.getSpawnedType() != null) {
+                    spawner.getPersistentDataContainer().set(entityTypeKey, PersistentDataType.STRING, spawner.getSpawnedType().toString());
+                }
+
+                final ItemStack      dropped = spawner.getWorld().dropItem(spawner.getLocation().add(0.5, 0.5, 0.5), new ItemStack(Material.SPAWNER)).getItemStack();
                 final BlockStateMeta meta    = (BlockStateMeta) dropped.getItemMeta();
                 meta.setBlockState(spawner);
                 dropped.setItemMeta(meta);
@@ -105,6 +119,25 @@ public class SpawnerManager implements Listener {
                 spawner.getWorld().spawn(spawner.getLocation(), ExperienceOrb.class, orb -> orb.setExperience(accumulator.getAccumulatedExperience()));
             });
             workingSpawners.remove(spawner);
+        }
+    }
+
+    @EventHandler
+    public void onBlockPlace(final BlockPlaceEvent event) {
+        if (event.getBlock().getType().equals(Material.SPAWNER)) {
+
+            final ItemStack itemSpawner = event.getItemInHand();
+            final ItemMeta spawnerMeta = itemSpawner.getItemMeta();
+            final CreatureSpawner spawner = (CreatureSpawner) event.getBlockPlaced().getState();
+
+            final String type = itemSpawner.getItemMeta().getPersistentDataContainer().get(entityTypeKey, PersistentDataType.STRING);
+            if (type != null && spawnerMeta != null) {
+                spawner.setSpawnedType(EntityType.valueOf(type));
+                spawner.getPersistentDataContainer().set(itemsKey, PersistentDataType.STRING, spawnerMeta.getPersistentDataContainer().getOrDefault(itemsKey, PersistentDataType.STRING, ""));
+                spawner.getPersistentDataContainer().set(experienceKey, PersistentDataType.INTEGER, spawnerMeta.getPersistentDataContainer().getOrDefault(experienceKey, PersistentDataType.INTEGER, 0));
+                spawner.update();
+            }
+
         }
     }
 
