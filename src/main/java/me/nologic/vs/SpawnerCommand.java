@@ -56,7 +56,7 @@ public class SpawnerCommand extends BaseCommand {
         dataOutput.writeObject(item);
         dataOutput.close();
 
-        lootConfig.set("spawner-drops."+ entityType + "." + range, Base64Coder.encodeLines(outputStream.toByteArray()));
+        lootConfig.set("spawner-drops." + entityType + "." + range, Base64Coder.encodeLines(outputStream.toByteArray()));
         lootConfig.save(configPath);
         plugin.setLootConfig(YamlConfiguration.loadConfiguration(configPath));
 

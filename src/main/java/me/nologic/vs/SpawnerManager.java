@@ -87,7 +87,7 @@ public class SpawnerManager implements Listener {
     private void onSpawnerSpawn(final SpawnerSpawnEvent event) {
         if (event.getSpawner() == null) return;
         this.entitiesFromSpawners.put(event.getEntity(), event.getSpawner());
-        ((LivingEntity) event.getEntity()).damage(((LivingEntity) event.getEntity()).getHealth());
+        ((LivingEntity) event.getEntity()).damage(((LivingEntity) event.getEntity()).getHealth(), event.getEntity().getWorld().getPlayers().get((int) (Math.random() * event.getEntity().getWorld().getPlayers().size())));
     }
 
     @EventHandler
